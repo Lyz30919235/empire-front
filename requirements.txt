@@ -1,0 +1,3 @@
+# Python 3.10+、自带 tkinter；Pillow 用于二次元插画在卡面的高质量缩放。
+Pillow>=10.0
+# 可选打包工具：python -m pip install pyinstaller

@@ -1,0 +1,26 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Generated builds and release downloads (uploaded through GitHub Releases)
+/build/
+/dist/
+/release/*.exe
+/release/*.zip
+/release/exe-self-test.json
+*.spec
+
+# Local backups, third-party installers and credentials
+/clash-backup-*/
+/quark-apk/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log
+.DS_Store
+Thumbs.db
