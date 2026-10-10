@@ -24,3 +24,11 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+
+# Godot import caches and local runtime/export templates
+/godot/.godot/
+/tools/godot-runtime/
+/release/godot-*.json
+
+# Local image-generation provenance contains private device paths
+/assets/generation/

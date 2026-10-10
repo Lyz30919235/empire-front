@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-10",
+  "version": "2.0.0",
+  "suites": [
+    {
+      "suite": "test_engine.gd",
+      "chunk_id": "881d67",
+      "wall_time_seconds": 0.948513,
+      "exit_code": 0,
+      "original_token_count": 198,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\n[规则] 开局换牌、实体守恒与双人确认\r\n[规则] 隐藏信息与错误动作原子性\r\n[规则] 共享四线、后方部署、敌方控制与基地射程\r\n[规则] 战斗、装甲、同时死亡、射程、飞行与嘲讽反击修复\r\n[规则] 遗言、坦克恢复、帝皇光环与敢死队时限\r\n[规则] 五种法术、商人战吼、航空母舰与高射炮\r\n[规则] 六种主动技能与冷却、一次性限制\r\n[规则] 疲劳、手牌上限、撤退与终局\r\n[规则] 80局完整AI对战、全部卡牌覆盖与每步不变量\r\n[AI报告] 完成80局；先手胜=47，后手胜=33，平局=0；最长=194动作；实际打出=26/26种卡\r\n[规则报告] 分组=9；断言=96183；失败=0\r\n"
+    },
+    {
+      "suite": "test_network.gd",
+      "chunk_id": "3b7a3f",
+      "wall_time_seconds": 3.6408679,
+      "exit_code": 0,
+      "original_token_count": 41,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\n[联机] 完整TCP对战：87动作，胜方=0\r\nNETWORK TESTS: 1669 checks, 0 failures\r\n"
+    },
+    {
+      "suite": "test_scene_ui.gd",
+      "chunk_id": "5cfde1",
+      "wall_time_seconds": 1.7958516,
+      "exit_code": 0,
+      "original_token_count": 29,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\nSCENE_UI_TEST: 54 checks; 0 failures\r\n"
+    },
+    {
+      "suite": "network_ui_probe.gd",
+      "chunk_id": "52959c",
+      "wall_time_seconds": 1.1422658,
+      "exit_code": 0,
+      "original_token_count": 29,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\nNETWORK UI PROBE checks=24 failures=0\r\n"
+    },
+    {
+      "suite": "review_engine_probe.gd",
+      "chunk_id": "d73343",
+      "wall_time_seconds": 0.5891525,
+      "exit_code": 0,
+      "original_token_count": 26,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\nREVIEW PROBE PASS checks=72\r\n"
+    },
+    {
+      "suite": "review_client_probe.gd",
+      "chunk_id": "6c132e",
+      "wall_time_seconds": 0.9533841,
+      "exit_code": 0,
+      "original_token_count": 30,
+      "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\r\n\r\nREVIEW_CLIENT_TEST: 28 checks; 0 failures\r\n"
+    }
+  ]
+}

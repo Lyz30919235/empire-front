@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-11",
+  "scope": [
+    "README.md",
+    "godot/README.md",
+    "图片文字与规则.md",
+    "godot/docs/图片文字与规则.md",
+    "docs/context/NOW.md",
+    "docs/context/MAP.md",
+    "docs/context/RUNBOOK.md",
+    "docs/context/DECISIONS.md",
+    "docs/context/RISKS.md",
+    "docs/context/卡牌描述编辑.md",
+    "docs/context/history/README.md"
+  ],
+  "local_links_checked": 194,
+  "failures": [],
+  "additional_checked_link": {
+    "file": "docs/context/NOW.md",
+    "link": "../../release/battle-document-check-20261011.json"
+  }
+}

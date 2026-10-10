@@ -1,4 +1,4 @@
-"""原创指挥台界面。无需第三方库，使用 Tk Canvas 绘制。"""
+"""四条线性战线的军事卡牌桌面，支持拖动部署、移动与攻击。"""
 import json
 from pathlib import Path
 import queue
@@ -35,7 +35,9 @@ class App(TabletopRenderer):
         self.canvas = tk.Canvas(root, bg=BG, highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.canvas.bind("<Button-1>", self.click)
+        self.canvas.bind("<ButtonPress-1>", self.press)
+        self.canvas.bind("<B1-Motion>", self.drag)
+        self.canvas.bind("<ButtonRelease-1>", self.release)
         self.canvas.bind("<Button-3>", lambda e: self.cancel())
         self.canvas.bind("<Motion>", self.hover)
         root.bind("<Escape>", lambda e: self.cancel())
@@ -47,6 +49,7 @@ class App(TabletopRenderer):
         self.lobby = None
         self.you = 0
         self.selected = None
+        self.drag_state = None
         self.mulligan_selected = set()
         self.mulligan_pending = False
         self.operation = "attack"
@@ -145,6 +148,8 @@ class App(TabletopRenderer):
             self.draw_lobby(w, h)
         else:
             self.draw_game(w, h)
+            if self.drag_state and self.drag_state.get("active"):
+                self.draw_drag_overlay()
 
     def art(self, x, y, key, color, scale=1):
         c = self.canvas
@@ -197,6 +202,169 @@ class App(TabletopRenderer):
 
 
 
+    def hit_at(self,x,y):
+        return next(((box,value) for box,value in reversed(self.hits) if box[0]<=x<=box[2] and box[1]<=y<=box[3]),None)
+
+    def press(self,e):
+        found=self.hit_at(e.x,e.y)
+        if not found:
+            self.drag_state=None
+            return
+        box,value=found
+        draggable=self.state and self.state.get("phase")=="battle" and self.state["winner"] is None and (value[0]=="hand" or value[0]=="unit" and value[2])
+        self.drag_state=dict(source=value,start=(e.x,e.y),point=(e.x,e.y),active=False,draggable=bool(draggable))
+
+    def drag(self,e):
+        gesture=self.drag_state
+        if not gesture or not gesture["draggable"]:
+            return
+        gesture["point"]=(e.x,e.y)
+        sx,sy=gesture["start"]
+        if not gesture["active"] and (e.x-sx)**2+(e.y-sy)**2<49:
+            return
+        if not gesture["active"]:
+            gesture["active"]=True
+            source=gesture["source"]
+            self.selected=(source[0],source[1])
+            self.inspect=source[-1]
+            self.status="松开鼠标执行；拖回手牌或拖到场外取消。"
+            self.redraw()
+        else:
+            self.draw_drag_overlay()
+
+    def drag_action(self,source,target):
+        if not target:
+            return None
+        kind=target[0]
+        if source[0]=="hand":
+            card=CARDS[source[-1]]
+            action=dict(type="play",hand=source[1])
+            if card["kind"]=="unit" or card.get("target")=="lane":
+                if kind=="lane":
+                    action["lane"]=target[1]
+                elif kind=="unit" and self.lookup(target[1]):
+                    action["lane"]=self.lookup(target[1])["lane"]
+                else:
+                    return None
+            elif card.get("target"):
+                if kind=="unit":
+                    action["target"]=target[1]
+                elif kind=="base" and target[1] and card.get("target")=="friendly":
+                    action["target"]="base"
+                else:
+                    return None
+            elif kind not in {"lane","unit","base"}:
+                return None
+            return action
+        if source[0]=="unit":
+            uid=source[1]
+            if kind=="unit" and not target[2]:
+                return dict(type="attack",unit=uid,target=target[1])
+            if kind=="base" and not target[1]:
+                return dict(type="attack",unit=uid,target="base")
+            if kind=="lane":
+                return dict(type="move",unit=uid,lane=target[1])
+            if kind=="unit" and target[2] and self.lookup(target[1]):
+                return dict(type="move",unit=uid,lane=self.lookup(target[1])["lane"])
+        return None
+
+    def drop_error(self,action):
+        if not action:
+            return "未选择合法放置位置，已取消拖动。"
+        s=self.state
+        if s["winner"] is not None or s.get("phase")!="battle":
+            return "当前阶段不能执行战斗操作。"
+        if s["turn"]!=self.you:
+            return "请等待你的回合。"
+        if self.client and (not self.network_ok or not all(x and x["online"] for x in self.lobby or [])):
+            return "连接中断，等待双方恢复连接。"
+        preview=Game.__new__(Game)
+        preview.players=s["players"]
+        own=s["players"][self.you]
+        if action["type"]=="play":
+            hand=next((h for h in own["hand"] if h["uid"]==action["hand"]),None)
+            if not hand:
+                return "这张牌已不在手中。"
+            card=CARDS[hand["card"]]
+            if own["mana"]<card["cost"]:
+                return "召唤点不足。"
+            if card["kind"]=="unit":
+                return preview.deploy_error(self.you,action["lane"])
+            if card.get("target") in {"friendly","enemy"}:
+                if action.get("target")=="base":
+                    return None if card["id"]=="heal" else "该法术不能作用于基地。"
+                try:
+                    owner,_=preview.unit(action.get("target"))
+                except RuleError as error:
+                    return str(error)
+                expected=self.you if card["target"]=="friendly" else 1-self.you
+                if owner!=expected:
+                    return "法术目标阵营错误。"
+            return None
+        try:
+            owner,u=preview.unit(action["unit"])
+        except RuleError as error:
+            return str(error)
+        if owner!=self.you:
+            return "不能指挥敌方单位。"
+        if action["type"]=="attack":
+            return preview.attack_error(self.you,u,action["target"])
+        if "建筑" in u["tags"]:
+            return "建筑不能移动。"
+        if not u["actions"] or u["reload"] or u["reloading"]:
+            return "这个单位没有可用行动。"
+        if abs(u["lane"]-action["lane"])!=1:
+            return "每次移动只能到相邻战线。"
+        if not preview.space(self.you,action["lane"]):
+            return "目标战线已满或被敌方占据。"
+        return None
+
+    def draw_drag_overlay(self):
+        self.canvas.delete("drag-overlay")
+        gesture=self.drag_state
+        if not gesture or not gesture["active"]:
+            return
+        before=set(self.canvas.find_all())
+        source=gesture["source"]
+        for box,value in list(self.hits):
+            action=self.drag_action(source,value)
+            if action and self.drop_error(action) is None:
+                x1,y1,x2,y2=box
+                self.canvas.create_rectangle(x1+1,y1+1,x2-1,y2-1,outline="#ede39a",width=2,dash=(5,3))
+        x,y=gesture["point"]
+        found=self.hit_at(x,y)
+        target=found[1] if found else None
+        action=self.drag_action(source,target)
+        color="#e6dd84" if self.drop_error(action) is None else "#db9277"
+        if source[0]=="unit":
+            sx,sy=gesture["start"]
+            self.canvas.create_line(sx,sy,x,y,fill=color,width=4,arrow="last",arrowshape=(14,18,6))
+        else:
+            hit_count=len(self.hits)
+            self.draw_hand(x-62,y-76,124,148,dict(uid=source[1],card=source[-1]),self.state["players"][self.you]["mana"])
+            del self.hits[hit_count:]
+            self.canvas.create_rectangle(x-64,y-85,x+64,y+78,outline=color,width=3)
+        for item in set(self.canvas.find_all())-before:
+            self.canvas.addtag_withtag("drag-overlay",item)
+
+    def release(self,e):
+        gesture=self.drag_state
+        self.drag_state=None
+        self.canvas.delete("drag-overlay")
+        if not gesture:
+            return
+        if not gesture.get("active"):
+            self.click(e)
+            return
+        found=self.hit_at(e.x,e.y)
+        action=self.drag_action(gesture["source"],found[1] if found else None)
+        error=self.drop_error(action)
+        if error:
+            self.status=error
+            self.redraw()
+        else:
+            self.submit(action,keep=gesture["source"][0]=="unit")
+
     def click(self,e):
         value=next((v for (x1,y1,x2,y2),v in reversed(self.hits) if x1<=e.x<=x2 and y1<=e.y<=y2),None)
         if not value:
@@ -225,7 +393,7 @@ class App(TabletopRenderer):
             if card["kind"]=="spell" and not card.get("target"):
                 self.submit(dict(type="play",hand=value[1]))
             else:
-                self.status="选择部署战线。" if card["kind"]=="unit" else "选择目标战线。" if card.get("target")=="lane" else "点击一个合法目标。"
+                self.status="拖动到己方后方战线部署。" if card["kind"]=="unit" else "选择目标战线。" if card.get("target")=="lane" else "拖动或点击一个合法目标。"
         elif self.selected and self.selected[0]=="hand":
             card=CARDS[self.inspect]
             a=dict(type="play",hand=self.selected[1])
@@ -255,7 +423,7 @@ class App(TabletopRenderer):
                 self.inspect=value[3]
                 self.operation="attack"
                 self.command_ally=None
-                self.status="点击敌军攻击，或使用右侧移动 / 技能按钮。"
+                self.status="拖动到敌军攻击、相邻空战线移动；主动技能使用右侧按钮。"
         elif self.selected and self.selected[0]=="unit":
             uid=self.selected[1]
             if self.operation=="move":
@@ -278,6 +446,8 @@ class App(TabletopRenderer):
         return next((u for p in self.state["players"] for u in p["board"] if u["uid"]==uid),None)
 
     def hover(self,e):
+        if self.drag_state:
+            return
         value=next((v for (x1,y1,x2,y2),v in reversed(self.hits) if x1<=e.x<=x2 and y1<=e.y<=y2),None)
         key=value[-1] if value and value[0] in {"hand","unit"} else None
         # 选择中的卡牌保持其详情，避免悬停敌军改变待执行法术。
@@ -305,10 +475,11 @@ class App(TabletopRenderer):
     def choose_factory(self,key):
         self.factory_option=key
         self.operation="skill"
-        self.status="点击有空位的友方战线制造坦克。"
+        self.status="点击己方最后方战线制造坦克。"
         self.redraw()
 
     def cancel(self):
+        self.drag_state=None
         if self.state and self.state.get("phase") == "mulligan" and not self.mulligan_pending:
             self.mulligan_selected.clear()
         self.selected=None
@@ -504,6 +675,7 @@ class App(TabletopRenderer):
         self.menu()
 
     def disconnect(self):
+        self.drag_state=None
         if self.client:
             self.client.close()
         if self.server:
@@ -604,16 +776,16 @@ GUIDE = """帝国：四线战令 · 1.1
 胜利目标：将敌方基地从30点生命降到0。
 牌组30张，同名最多2张。双方各获得4张初始手牌，点击任意数量的牌标记替换，点击确认换牌，或点击保留全部。每人只能确认一次。新牌从当前牌堆随机抽取，再将旧牌放回并洗牌；不会立即抽回刚替换的实体牌，但可能抽到另一张同名牌。双方确认后开战，先手首回合不额外抽牌，此后每个自己的回合开始抽1张。手牌上限10，牌库耗尽后受到逐渐增加的疲劳伤害。
 召唤点从1开始，每个自己的回合上限+1，最高10，并补满。借贷获得临时召唤点，下回合偿还。
-战场有4条战线，每条每人最多3个单位。通常部署当回合不能行动，下一回合获得2次行动。
-点击手牌，再点击战线部署；点击单位，再点击敌军攻击。移动/技能通过右侧按钮切换；右键或Esc取消。
+四条战线从敌方后方到己方后方上下排列；同一条战线只能由一方控制，最多3个单位。普通单位只能在己方最后方部署，然后逐线移动推进；不能移动到有敌军的战线。通常部署当回合不能行动，下一回合获得2次行动。
+拖动手牌到己方后方部署；拖动友军到相邻空战线移动，拖到敌军或敌方基地攻击；拖动法术到合法目标施放。黄色虚线表示合法落点，拖出战场或右键/Esc取消。仍可点击选择并使用技能按钮。
 
 攻击与移动
 普通攻击与相邻移动分别花费1次行动。近战可攻击同线或相邻线，远程相距2线，超远程相距3线。
-地面单位必须清空敌军才能攻击基地；飞行可直接攻击基地，但同线嘲讽依然必须先处理。
+地面单位必须清空敌军且基地处于射程内才能攻击：基地在敌方后方战线外一格，近战必须推进到敌方后方。飞行可直接攻击基地，但敌方后方的嘲讽必须先处理。
 同线与相邻线交战会反击，带反击关键词的单位也可远程反击；建筑不能反击。伤害同时结算。防御对每次伤害独立减免。
 飞行免疫普通地面近战；远程、超远程、对空或飞行单位可以攻击飞行。战机“仅对空”不能攻击地面单位。
 突袭：部署即可行动。迅捷：每回合3行动。装弹：攻击后结束行动，下个自己的回合也无法行动，再下个回合恢复。
-技能会显示冷却；坦克工厂选择轻/中坦后点击战线。决策塔先选择技能，再选友军，再点其攻击目标。
+技能会显示冷却；坦克工厂选择轻/中坦后点击己方最后方战线。航空母舰的衍生战机先填己方后方，再填紧邻前线；满员或敌占时不生成。决策塔先选择技能，再选友军，再点其攻击目标。
 
 Radmin VPN 双人联机
 1. 两人启动Radmin VPN，进入同一个VPN网络。
@@ -625,5 +797,5 @@ Radmin VPN 双人联机
 不需要Radmin Server或远程控制软件。口令只用于熟人VPN房间的准入，不是传输加密。
 
 手稿说明
-本作保留手稿核心规则，界面采用KARDS式复古地图桌面布局，26张卡牌分别配有贴合卡名和效果的二次元插画。照片涂改处已按可玩规则补全；完整抄录与采用值见项目中的“图片文字与规则.md”。卡牌原型有26种，手稿末段序号有重号。
+本作保留手稿核心规则，界面采用KARDS式复古地图桌面布局，26张卡牌分别配有贴合卡名和效果的德系服装与机械、日系二次元绘画插画。照片涂改处已按可玩规则补全；完整抄录与采用值见项目中的“图片文字与规则.md”。卡牌原型有26种，手稿末段序号有重号。
 """

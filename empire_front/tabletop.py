@@ -136,21 +136,22 @@ class TabletopRenderer:
         border="#e9d27c" if selected else "#4b6141" if friendly else "#85533d"
         self.rect(x+3,y+4,w,h,"#464b3b","#464b3b")
         self.rect(x,y,w,h,PAPER,border,3 if selected else 2)
-        self.rect(x+3,y+3,w-6,21,"#69744f" if friendly else "#805544",border)
-        self.text(x+w/2,y+14,CARDS[u["card"]]["name"].replace("帝国","",1),8,CREAM,"center",width=w-6,bold=True)
-        self.illustration(x+4,y+27,w-8,max(30,h-65),u["card"])
-        by=y+h-29
-        for xx,value,fill in [(x+14,u["attack"],"#8c493a"),(x+w-14,u["hp"],"#526243")]:
+        artw=w*.45
+        self.illustration(x+4,y+4,artw,h-8,u["card"])
+        rx=x+artw+12
+        self.text(rx,y+6,CARDS[u["card"]]["name"].replace("帝国","",1),9,INK,width=w-artw-18,bold=True)
+        by=y+h-31
+        for xx,value,fill in [(rx+11,u["attack"],"#8c493a"),(x+w-17,u["hp"],"#526243")]:
             c.create_oval(xx-10,by-10,xx+10,by+10,fill=fill,outline="#e6d7b8")
             self.text(xx,by,str(value),10,CREAM,"center",bold=True)
-        self.text(x+w/2,by,f"盾{u['armor']}" if u["armor"] else "",8,FADED,"center")
+        self.text((rx+x+w)/2,by,f"盾{u['armor']}" if u["armor"] else "",8,FADED,"center")
         if u["reload"] or u["reloading"]:
             label="装弹"
         elif u["cooldown"]:
             label=f"行动{u['actions']} · 冷却{u['cooldown']}"
         else:
             label=f"行动 {u['actions']}" if u["actions"] else "待命"
-        self.text(x+w/2,y+h-9,label,7,INK,"center",width=w-4)
+        self.text((rx+x+w-8)/2,y+h-12,label,8,INK,"center",width=w-artw-15)
         self.hit((x,y,x+w,y+h),("unit",u["uid"],friendly,u["card"]))
 
     def draw_hand(self,x,y,w,h,hand,mana,mulligan=False):
@@ -218,9 +219,8 @@ class TabletopRenderer:
         bw=w-sw-38
         sx=w-sw-17
         field_bottom=h-230
-        top=142
-        middle=(top+field_bottom-65)/2
-        cardh=min(140,(field_bottom-top-105)/2)
+        top=128
+        rowh=(field_bottom-64-top)/4
         self.text(26,14,"EMPIRE  /  帝国 · 四线战令",15,CREAM,bold=True)
         turn="你的回合" if s["turn"]==p else "对手回合"
         if s["winner"] is not None:
@@ -230,19 +230,24 @@ class TabletopRenderer:
         self.text(bw-8,17,f"第 {s['round']:02} 轮  |  {turn}",12,"#dfd1a9","ne",bold=True)
         self.base_bar(26,70,bw-22,enemy,RUST,False)
         self.base_bar(26,field_bottom-53,bw-22,own,OLIVE,True)
-        lane_w=(bw-16)/4
-        for lane in range(4):
-            x=26+lane*lane_w
-            if lane:
-                self.canvas.create_line(x-4,130,x-4,field_bottom-62,fill="#93977a",dash=(3,9))
-            self.text(x+lane_w/2,middle-2,f"—  战线 {lane+1:02}  —",10,"#dcd7b9","center",bold=True)
-            self.hit((x,130,x+lane_w-7,field_bottom-61),("lane",lane))
-            for owner,y0 in [(1-p,top),(p,middle+20)]:
-                units=[u for u in s["players"][owner]["board"] if u["lane"]==lane]
-                miniw=min(87,(lane_w-21)/3)
-                start=x+(lane_w-7-(len(units)*(miniw+5)-5))/2
-                for j,u in enumerate(units):
-                    self.draw_unit(start+j*(miniw+5),y0,miniw,cardh,u,owner==p)
+        self.lane_boxes={}
+        order=list(range(4)) if p==0 else list(reversed(range(4)))
+        for index,lane in enumerate(order):
+            y=top+index*rowh
+            units=[(owner,u) for owner in [1-p,p] for u in s["players"][owner]["board"] if u["lane"]==lane]
+            controller=units[0][0] if units else None
+            shade="#606f50" if controller==p else "#7c6856" if controller==1-p else "#777e65"
+            self.rect(26,y,bw-24,rowh-5,shade,"#adb090",1)
+            label=["敌方后方","敌方前线","己方前线","己方后方"][index]
+            self.text(37,y+12,label,10,CREAM,bold=True)
+            self.text(37,y+36,"敌军控制" if controller==1-p else "友军控制" if controller==p else "待占领",8,"#ded8bf")
+            box=(26,y,bw+2,y+rowh-5)
+            self.lane_boxes[lane]=box
+            self.hit(box,("lane",lane))
+            cardw=min(218,(bw-150)/3-10)
+            start=145+(bw-145-len(units)*(cardw+12)+12)/2
+            for j,(owner,u) in enumerate(units):
+                self.draw_unit(start+j*(cardw+12),y+8,cardw,rowh-21,u,owner==p)
         # 右侧情报纸张，卡牌详情和操作区遵循同一纸面视觉。
         self.rect(sx+4,64,sw,h-84,"#4a503e","#4a503e")
         self.rect(sx,60,sw,h-84,"#cfc8b0","#555e48",2)
@@ -255,7 +260,7 @@ class TabletopRenderer:
             self.text(sx+15,292," · ".join(inspected["tags"]),9,"#4c6545",width=sw-30)
             self.text(sx+15,322,inspected["text"],9 if h<830 else 10,INK,width=sw-30)
         else:
-            self.text(sx+15,126,"悬停查看卡牌档案\n\n点击手牌 → 点击战线部署\n点击友军 → 点击敌军攻击\n\n移动与技能：先选单位，\n再使用下面的指令按钮。\n\n右键 / Esc 取消选择",11,FADED,width=sw-30)
+            self.text(sx+15,126,"悬停查看卡牌档案\n\n拖动手牌到己方最后方部署\n拖动友军到相邻空战线移动\n拖动友军到敌军或基地攻击\n\n拖动法术到目标施放\n点击单位后可使用技能按钮\n\n右键 / Esc 取消选择",11,FADED,width=sw-30)
         cy=h-375
         if self.selected and self.selected[0]=="unit":
             self.button(sx+12,cy,76,32,"攻击",lambda:self.set_operation("attack"),self.operation=="attack")

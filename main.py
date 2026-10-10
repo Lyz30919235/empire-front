@@ -34,6 +34,21 @@ def self_test(report_path):
         assert app.state["phase"] == "mulligan"
         app.confirm_mulligan(True)
         assert app.state["phase"] == "battle"
+        assert app.state["home_lane"] == 3
+        assert sorted(app.lane_boxes,key=lambda lane:app.lane_boxes[lane][1]) == [0,1,2,3]
+        app.game.players[0]["hand"] = [dict(uid=9000,card="light_cavalry")]
+        app.game.players[0]["mana"] = 10
+        app.state = app.game.view(0)
+        app.redraw()
+        box=next(box for box,value in app.hits if value[0]=="hand")
+        x,y=int((box[0]+box[2])/2),int((box[1]+box[3])/2)
+        rear=app.lane_boxes[3]
+        tx,ty=int(rear[0]+30),int((rear[1]+rear[3])/2)
+        app.canvas.event_generate("<ButtonPress-1>",x=x,y=y)
+        app.canvas.event_generate("<B1-Motion>",x=tx,y=ty)
+        assert app.drag_state["active"]
+        app.canvas.event_generate("<ButtonRelease-1>",x=tx,y=ty)
+        assert app.game.players[0]["board"][0]["lane"] == 3
         illustrated = sum(app.card_art_photo(key,96,64) is not None for key in CARDS)
         assert illustrated == len(CARDS), f"缺少卡牌插画：{illustrated}/{len(CARDS)}"
         server = RoomServer(0, bind="127.0.0.1")
@@ -43,7 +58,7 @@ def self_test(report_path):
         channel.close()
         server.close()
         app.close()
-        Path(report_path).write_text(json.dumps(dict(status="ok",cards=len(CARDS),illustrations=illustrated,mulligan=True,tk=True,tcp=True)),encoding="utf-8")
+        Path(report_path).write_text(json.dumps(dict(status="ok",version=VERSION,cards=len(CARDS),illustrations=illustrated,mulligan=True,linear_lanes=True,drag=True,tk=True,tcp=True)),encoding="utf-8")
 
 
 def main():

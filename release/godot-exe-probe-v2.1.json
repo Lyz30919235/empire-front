@@ -1,0 +1,26 @@
+{
+  "cards": 26,
+  "checks": 116,
+  "effects": {
+    "kinds": {
+      "attack": 1,
+      "counter": 1,
+      "damage": 3,
+      "death": 1,
+      "deploy": 2,
+      "move": 1,
+      "skill": 1,
+      "spell": 1,
+      "turn": 2
+    },
+    "played": 13,
+    "sound_count": 13,
+    "visual_count": 13
+  },
+  "engine": "4.7.2-stable (official)",
+  "executable_sha256": "69ca0264382ca0caaf5974b6bde22f1e987cd0219ac3e861c4122b26567292ac",
+  "failures": [],
+  "game_version": "2.1.0",
+  "passed": true,
+  "renderer": "Windows"
+}

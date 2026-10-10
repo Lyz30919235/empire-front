@@ -81,6 +81,26 @@ class NetworkTests(unittest.TestCase):
         intruder = self.connect()
         self.assertIn("满", self.wait(intruder, "error")["message"])
 
+    def test_rear_deployment_authority_and_views(self):
+        host,guest,_,_,hs,gs=self.started()
+        self.assertEqual(hs["state"]["home_lane"],3)
+        self.assertEqual(gs["state"]["home_lane"],0)
+        game=self.server.game
+        game.players[0]["hand"]=[dict(uid=9000,card="light_cavalry")]
+        game.players[0]["mana"]=10
+        host.send(dict(type="action",revision=2,action=dict(type="play",hand=9000,lane=2)))
+        self.assertIn("后方",self.wait(host,"error")["message"])
+        self.assertEqual(game.players[0]["mana"],10)
+        self.assertEqual(len(game.players[0]["hand"]),1)
+        host.send(dict(type="action",revision=2,action=dict(type="play",hand=9000,lane=3)))
+        hs=self.wait(host,"state",lambda m:m["state"]["revision"]==3)
+        gs=self.wait(guest,"state",lambda m:m["state"]["revision"]==3)
+        self.assertEqual(hs["state"]["players"][0]["board"],gs["state"]["players"][0]["board"])
+        uid=hs["state"]["players"][0]["board"][0]["uid"]
+        host.send(dict(type="action",revision=3,action=dict(type="move",unit=uid,lane=2)))
+        gs=self.wait(guest,"state",lambda m:m["state"]["revision"]==4)
+        self.assertEqual(gs["state"]["players"][0]["board"][0]["lane"],2)
+
     def test_disconnect_pause_reconnect(self):
         host, guest, _, gw, _, _ = self.started()
         guest.close()

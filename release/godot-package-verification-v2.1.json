@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-11",
+  "game_version": "2.1.0",
+  "protocol_version": "2.1",
+  "probe": "release/godot-exe-probe-v2.1.json",
+  "exe": {
+    "path": "release/EmpireFrontGodot.exe",
+    "bytes": 158404592,
+    "sha256": "69ca0264382ca0caaf5974b6bde22f1e987cd0219ac3e861c4122b26567292ac"
+  },
+  "archives": {
+    "Windows": {
+      "path": "release/EmpireFrontGodot-Windows-v2.1.zip",
+      "bytes": 91392625,
+      "sha256": "27bed7bd2c6c0af46ae491bbe2aeb82f945cbabba558d954010998d8d3aee7d6",
+      "crc_passed": true,
+      "exe_matches_probe": true
+    },
+    "Source": {
+      "path": "release/EmpireFrontGodot-Source-v2.1.zip",
+      "bytes": 70387408,
+      "sha256": "a65a23862b0f66efa211b0de4da5c640f6ee5ad920ee35a99f6fac15ec04992e",
+      "crc_passed": true,
+      "source_key_files": {
+        "godot/scripts/engine.gd": "93a6e0e50423bf71856f4f2991f2675ed85b5a6b6510d588fdc1485a39f29dfd",
+        "godot/scripts/network.gd": "17c9e851ea69d2186ca9e7b1841259d7772158f9b9e0dddda0cd627b220ea8b0",
+        "godot/scripts/main.gd": "85769fcdde438bab1aeaa07bfe10a99940721485c4f1149ceff45eb2f00c40d8",
+        "godot/scripts/card_view.gd": "ca5656482e9db1a6d323d9d269f09fb2b92fa4bbb22edb16b3b1774b92f27a8c",
+        "godot/scripts/battle_fx.gd": "ecaf68fcfa5dc786a0277ace857d916ef2b2b0a8c8f0f732f4c2556412755532",
+        "godot/scripts/ui_probe.gd": "5adfc6fb01993f41fa4465d4b1c620f62b22fba1b25ac5e568237340d2c5bb83",
+        "godot/assets/data/cards.json": "89507764ca5eda01128487c9b5a9a245910ac87049cfd14e13b1be441e93fe89",
+        "godot/tests/test_engine.gd": "cb5f4087b62a541ffd57a5b13a883a3ca9e664b4cf9e0ee0f9bf6ff9a6d3ceb3",
+        "godot/tests/test_network.gd": "137ae1f7af8f02ffd01067e4e98313481a827a6151408cd0553181e4e36f8cae",
+        "godot/tests/test_scene_ui.gd": "33ceb25cb3a45cd676a01cd7cb122a3649d44dd42ddb4dc9ecfd7562f3b378d2",
+        "godot/tests/network_ui_probe.gd": "5aaf6ca4045131bf4bf24dc5e002e499f760732d5be4ce061f788867da94624a",
+        "godot/project.godot": "906baa517d96ed7c65a591c1956485080a1c09cb50078a323378426036d1e12a",
+        "godot/export_presets.cfg": "cb42069944d354f27892960a8fb89e052bd81d059e0fcede2d3e3233afdb8a05",
+        "godot/README.md": "ad80a236dece1ee3d7e9091b3b741708c90304f9cf3d82c344c46ef01df42595",
+        "godot/docs/图片文字与规则.md": "b185b230016c1ecd0389d4146933b537a0bea18ba5a3a136a49fbe80ce85460c",
+        "tools/build_godot_release.py": "f92f855f0feffd4ab0041ceafe957f1962053a3d2511d38713edc24227ba0e29"
+      }
+    }
+  }
+}

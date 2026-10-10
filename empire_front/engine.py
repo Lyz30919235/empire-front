@@ -101,7 +101,19 @@ class Game:
         return lane
 
     def space(self, p, lane):
-        return sum(u["lane"] == lane for u in self.players[p]["board"]) < 3
+        return not any(u["lane"] == lane for u in self.players[1-p]["board"]) and sum(u["lane"] == lane for u in self.players[p]["board"]) < 3
+
+    @staticmethod
+    def home_lane(p):
+        """四条战线使用共享物理编号；玩家0后方为3，玩家1后方为0。"""
+        return 3 if p == 0 else 0
+
+    def deploy_error(self, p, lane):
+        if lane != self.home_lane(p):
+            return "普通单位只能在己方最后方战线部署，再逐线推进。"
+        if not self.space(p,lane):
+            return "己方后方战线已满或被敌方占据。"
+        return None
 
     def summon(self, p, key, lane, token=False):
         if not self.space(p, lane):
@@ -192,7 +204,7 @@ class Game:
             self.draw(p)
         self.note(f"第{self.round}轮 · {player['name']}的回合。")
 
-    def attack_error(self, p, u, target, free=False):
+    def attack_error(self, p, u, target, free=False, retaliation=False):
         if "建筑" in u["tags"] or u["attack"] <= 0:
             return "建筑或零攻击单位不能普攻。"
         if u["reload"] or u["reloading"]:
@@ -201,10 +213,14 @@ class Game:
             return "此单位没有剩余行动。"
         enemies = self.players[1 - p]["board"]
         if target == "base":
-            if any("嘲讽" in x["tags"] and x["lane"] == u["lane"] for x in enemies):
-                return "此战线存在嘲讽单位。"
+            if any("嘲讽" in x["tags"] and x["lane"] == self.home_lane(1-p) for x in enemies):
+                return "敌方后方战线有嘲讽单位保护基地。"
             if enemies and "飞行" not in u["tags"]:
                 return "先清除敌方全部战场单位，才能攻击基地。"
+            reach = 3 if "超远程" in u["tags"] else 2 if "远程" in u["tags"] else 1
+            base_position = -1 if p == 0 else 4
+            if "飞行" not in u["tags"] and abs(u["lane"]-base_position)>reach:
+                return "基地超出射程，请沿战线向敌方推进。"
             return None
         try:
             owner, v = self.unit(target)
@@ -219,7 +235,7 @@ class Game:
             return "此单位只能攻击飞行单位或基地。"
         if "飞行" in v["tags"] and not any(t in u["tags"] for t in ["飞行", "远程", "超远程", "对空"]):
             return "地面近战无法攻击飞行单位。"
-        if "嘲讽" not in v["tags"] and any("嘲讽" in x["tags"] and x["lane"] == v["lane"] for x in enemies):
+        if not retaliation and "嘲讽" not in v["tags"] and any("嘲讽" in x["tags"] and x["lane"] == v["lane"] for x in enemies):
             return "先攻击目标战线的嘲讽单位。"
         return None
 
@@ -239,7 +255,7 @@ class Game:
             dealt = self.damage(v, amount, 2 if u["card"] == "anti_air" and "飞行" in v["tags"] else 0)
             # 普通单位近距离互相交战；反击关键字可跨距离还击。
             retaliate = abs(u["lane"] - v["lane"]) <= 1 or "反击" in v["tags"]
-            can_hit = self.attack_error(1 - p, v, u["uid"], free=True) is None
+            can_hit = self.attack_error(1 - p, v, u["uid"], free=True, retaliation=True) is None
             back = self.damage(u, v["attack"]) if retaliate and can_hit else 0
             self.note(f"{CARDS[u['card']]['name']}攻击{CARDS[v['card']]['name']}：{dealt}伤害 / {back}反击。")
         if "装弹" in u["tags"]:
@@ -255,13 +271,15 @@ class Game:
         c = CARDS[hand["card"]]
         if c["cost"] > player["mana"]:
             raise RuleError("召唤点不足。")
-        lane = action.get("lane", 0)
+        lane = action.get("lane", self.home_lane(p))
         target = action.get("target")
         victim = None
         if c["kind"] == "unit" or c.get("target") == "lane":
             self.lane(lane)
-        if c["kind"] == "unit" and not self.space(p, lane):
-            raise RuleError("每条战线最多3个友军。")
+        if c["kind"] == "unit":
+            error = self.deploy_error(p,lane)
+            if error:
+                raise RuleError(error)
         if c.get("target") in {"enemy", "friendly"}:
             if c["id"] == "heal" and target == "base":
                 pass
@@ -283,7 +301,9 @@ class Game:
                         self.next_id += 1
             if c["id"] == "carrier":
                 for _ in range(3):
-                    free = next((l for l in [lane] + [x for x in range(4) if x != lane] if self.space(p, l)), None)
+                    # 空中衍生物可在己方后方或紧邻的友方前线整备，不越过敌人生成。
+                    direction = -1 if p == 0 else 1
+                    free = next((l for l in [lane,lane+direction] if 0<=l<4 and self.space(p,l)),None)
                     if free is not None:
                         self.summon(p, "plane", free, token=True)
             if c["id"] == "anti_air":
@@ -323,6 +343,8 @@ class Game:
             if option not in {"light_tank", "medium_tank"}:
                 raise RuleError("只能制造轻型或中型坦克。")
             mana = 2 if option == "light_tank" else 3
+            if lane != self.home_lane(p):
+                raise RuleError("制造的坦克必须进入己方最后方战线。")
             if self.players[p]["mana"] < mana or not self.space(p, lane):
                 raise RuleError("召唤点不足或战线已满。")
         if key == "command":
@@ -399,7 +421,7 @@ class Game:
                 if abs(lane - u["lane"]) != 1:
                     raise RuleError("每次移动只能到相邻战线。")
                 if not self.space(p, lane):
-                    raise RuleError("目标战线已满。")
+                    raise RuleError("目标战线已满或由敌方控制；先消灭其中的敌军。")
                 u["lane"] = lane
                 u["actions"] -= 1
                 self.note(f"{CARDS[u['card']]['name']}移至战线{lane + 1}。")
@@ -415,7 +437,7 @@ class Game:
     def view(self, p):
         result = dict(turn=self.turn, round=self.round, revision=self.revision, phase=self.phase,
                       mulligan_done=self.mulligan_done[:],
-                      winner=self.winner, log=self.log[:], you=p, players=[])
+                      winner=self.winner, log=self.log[:], you=p, home_lane=self.home_lane(p), players=[])
         for i, player in enumerate(self.players):
             visible = {k: copy.deepcopy(v) for k, v in player.items() if k not in {"hand", "deck"}}
             visible["deck_count"] = len(player["deck"])
@@ -442,7 +464,9 @@ class Game:
                 continue
             base = dict(type="play", hand=h["uid"])
             if c["kind"] == "unit":
-                actions.extend(dict(base, lane=l) for l in range(4) if self.space(p, l))
+                home=self.home_lane(p)
+                if self.deploy_error(p,home) is None:
+                    actions.append(dict(base,lane=home))
             elif c.get("target") == "lane":
                 actions.extend(dict(base, lane=l) for l in range(4))
             elif c.get("target") == "enemy":
@@ -471,7 +495,9 @@ class Game:
                     elif key == "manufacture":
                         for option, cost in [("light_tank", 2), ("medium_tank", 3)]:
                             if player["mana"] >= cost:
-                                actions.extend(dict(b, option=option, lane=l) for l in range(4) if self.space(p, l))
+                                home=self.home_lane(p)
+                                if self.space(p,home):
+                                    actions.append(dict(b,option=option,lane=home))
                     elif key == "command":
                         for ally in player["board"]:
                             if ally is not u:
@@ -506,8 +532,11 @@ class Game:
                 return 30 + c["cost"] + (0.2 * (3 - sum(u["lane"] == a.get("lane") for u in self.players[p]["board"])))
             if a["type"] == "move":
                 _, u = self.unit(a["unit"])
-                before = min((abs(u["lane"] - v["lane"]) for v in self.players[1 - p]["board"]), default=0)
-                after = min((abs(a["lane"] - v["lane"]) for v in self.players[1 - p]["board"]), default=0)
+                enemy_base=-1 if p==0 else 4
+                before = min((abs(u["lane"] - v["lane"]) for v in self.players[1 - p]["board"]), default=abs(u["lane"]-enemy_base))
+                after = min((abs(a["lane"] - v["lane"]) for v in self.players[1 - p]["board"]), default=abs(a["lane"]-enemy_base))
+                if u["lane"]==self.home_lane(p) and a["lane"]!=u["lane"]:
+                    return 13
                 return 10 if after < before else -2
             return 0
         return max(actions, key=score) if actions else dict(type="end")

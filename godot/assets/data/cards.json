@@ -1,0 +1,355 @@
+{
+  "cards": {
+    "scout": {
+      "id": "scout",
+      "name": "帝国侦察兵",
+      "cost": 1,
+      "attack": 1,
+      "health": 2,
+      "tags": [
+        "防御1"
+      ],
+      "text": "受到伤害时减少1点伤害。",
+      "kind": "unit",
+      "armor": 1
+    },
+    "archer": {
+      "id": "archer",
+      "name": "帝国弓箭手",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tags": [
+        "远程",
+        "反击"
+      ],
+      "text": "可攻击相距2条战线内的目标；受到单位攻击时反击。",
+      "kind": "unit"
+    },
+    "light_cavalry": {
+      "id": "light_cavalry",
+      "name": "帝国轻骑兵",
+      "cost": 2,
+      "attack": 2,
+      "health": 4,
+      "tags": [
+        "突袭",
+        "迅捷"
+      ],
+      "text": "部署即可行动，每回合2次行动。",
+      "kind": "unit"
+    },
+    "heavy_cavalry": {
+      "id": "heavy_cavalry",
+      "name": "帝国重骑兵",
+      "cost": 4,
+      "attack": 4,
+      "health": 7,
+      "tags": [
+        "突袭"
+      ],
+      "text": "技能·冲锋：对一条敌方战线全部单位造成2点伤害。消耗1行动，冷却2回合。",
+      "kind": "unit",
+      "skill": "charge"
+    },
+    "vanguard": {
+      "id": "vanguard",
+      "name": "帝国冲锋手",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tags": [],
+      "text": "技能·号令：同线其他友军攻击+1，获得迅捷。本单位每局限一次，消耗1行动。",
+      "kind": "unit",
+      "skill": "rally"
+    },
+    "infantry": {
+      "id": "infantry",
+      "name": "帝国重步兵",
+      "cost": 2,
+      "attack": 3,
+      "health": 5,
+      "tags": [],
+      "text": "可靠的主力步兵。",
+      "kind": "unit"
+    },
+    "hound": {
+      "id": "hound",
+      "name": "帝国猎犬",
+      "cost": 1,
+      "attack": 1,
+      "health": 2,
+      "tags": [],
+      "text": "遗言：召唤一只2/2帝国猎犬（无遗言）。",
+      "kind": "unit"
+    },
+    "loan": {
+      "id": "loan",
+      "name": "借贷",
+      "cost": 0,
+      "attack": 0,
+      "health": 0,
+      "tags": [],
+      "text": "本回合获得2点临时召唤点；下个自己的回合扣除2点可用召唤点。",
+      "kind": "spell"
+    },
+    "arrows": {
+      "id": "arrows",
+      "name": "箭雨",
+      "cost": 4,
+      "attack": 0,
+      "health": 0,
+      "tags": [],
+      "text": "指定一条有敌方单位的战线：对该线所有敌方单位造成2点伤害。",
+      "kind": "spell",
+      "target": "lane"
+    },
+    "fireball": {
+      "id": "fireball",
+      "name": "火球术",
+      "cost": 4,
+      "attack": 0,
+      "health": 0,
+      "tags": [],
+      "text": "对一个敌方单位造成6点伤害。",
+      "kind": "spell",
+      "target": "enemy"
+    },
+    "merchant": {
+      "id": "merchant",
+      "name": "帝国商人",
+      "cost": 3,
+      "attack": 1,
+      "health": 3,
+      "tags": [],
+      "text": "战吼：从牌库抽取至多两张费用最低的随从。",
+      "kind": "unit"
+    },
+    "banner": {
+      "id": "banner",
+      "name": "帝国战旗",
+      "cost": 3,
+      "attack": 0,
+      "health": 0,
+      "tags": [],
+      "text": "指定一条战线：连续3个自己的回合开始时，该线友军攻击+2、行动+1。",
+      "kind": "spell",
+      "target": "lane"
+    },
+    "heal": {
+      "id": "heal",
+      "name": "急救",
+      "cost": 2,
+      "attack": 0,
+      "health": 0,
+      "tags": [],
+      "text": "恢复一个友方单位或自己基地3点生命。",
+      "kind": "spell",
+      "target": "friendly"
+    },
+    "shield": {
+      "id": "shield",
+      "name": "帝国重盾兵",
+      "cost": 4,
+      "attack": 1,
+      "health": 7,
+      "tags": [
+        "防御1",
+        "远程",
+        "嘲讽"
+      ],
+      "text": "同线有此单位时，敌人必须优先攻击它。",
+      "kind": "unit",
+      "armor": 1
+    },
+    "artillery": {
+      "id": "artillery",
+      "name": "帝国榴弹炮",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tags": [
+        "装弹",
+        "超远程",
+        "反击"
+      ],
+      "text": "攻击覆盖全部战线；攻击后下个自己的回合无法行动。",
+      "kind": "unit"
+    },
+    "carrier": {
+      "id": "carrier",
+      "name": "帝国航空母舰",
+      "cost": 7,
+      "attack": 4,
+      "health": 10,
+      "tags": [
+        "迅捷"
+      ],
+      "text": "战吼：在己方后方及紧邻前线召唤至多3个帝国战机。技能·空袭：对一条敌方战线造成8点伤害，消耗2行动，冷却2回合。",
+      "kind": "unit",
+      "skill": "airstrike"
+    },
+    "plane": {
+      "id": "plane",
+      "name": "帝国战机",
+      "cost": 2,
+      "attack": 2,
+      "health": 4,
+      "tags": [
+        "飞行",
+        "仅对空",
+        "迅捷",
+        "突袭"
+      ],
+      "text": "可攻击飞行单位或敌方基地；地面近战无法攻击它。",
+      "kind": "unit"
+    },
+    "emperor": {
+      "id": "emperor",
+      "name": "帝国帝皇",
+      "cost": 10,
+      "attack": 1,
+      "health": 1,
+      "tags": [],
+      "text": "回合开始：其余帝国单位攻击+2、行动+1。遗言：敌方每回合开始随机摧毁其一个非帝皇单位。",
+      "kind": "unit"
+    },
+    "heavy_tank": {
+      "id": "heavy_tank",
+      "name": "帝国重型坦克",
+      "cost": 8,
+      "attack": 8,
+      "health": 9,
+      "tags": [
+        "防御2"
+      ],
+      "text": "回合开始恢复2点生命，不超过生命上限。",
+      "kind": "unit",
+      "armor": 2
+    },
+    "engineer": {
+      "id": "engineer",
+      "name": "帝国工人",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "tags": [],
+      "text": "遗言：随机一个友方机械单位攻击+1、防御+1、生命上限及生命+2。",
+      "kind": "unit"
+    },
+    "suicide": {
+      "id": "suicide",
+      "name": "帝国敢死队",
+      "cost": 3,
+      "attack": 4,
+      "health": 1,
+      "tags": [
+        "突袭",
+        "迅捷"
+      ],
+      "text": "首次攻击伤害翻倍；部署后的第二个自己的回合开始时阵亡。",
+      "kind": "unit"
+    },
+    "medium_tank": {
+      "id": "medium_tank",
+      "name": "帝国中型坦克",
+      "cost": 6,
+      "attack": 5,
+      "health": 8,
+      "tags": [
+        "防御1"
+      ],
+      "text": "技能·自修：恢复1点生命。消耗1行动。",
+      "kind": "unit",
+      "armor": 1,
+      "skill": "repair"
+    },
+    "light_tank": {
+      "id": "light_tank",
+      "name": "帝国轻型坦克",
+      "cost": 5,
+      "attack": 4,
+      "health": 7,
+      "tags": [
+        "迅捷",
+        "防御1"
+      ],
+      "text": "每回合2次行动；每次受到伤害减少1点。",
+      "kind": "unit",
+      "armor": 1
+    },
+    "anti_air": {
+      "id": "anti_air",
+      "name": "帝国高射炮",
+      "cost": 7,
+      "attack": 6,
+      "health": 6,
+      "tags": [
+        "对空",
+        "超远程",
+        "装弹"
+      ],
+      "text": "战吼：攻击+2。攻击飞行单位时额外忽略2点防御。",
+      "kind": "unit"
+    },
+    "factory": {
+      "id": "factory",
+      "name": "帝国坦克工厂",
+      "cost": 8,
+      "attack": 0,
+      "health": 10,
+      "tags": [
+        "建筑"
+      ],
+      "text": "回合开始恢复2点生命。技能·制造：支付2点召唤点制造轻型坦克，或3点制造中型坦克。坦克进入己方最后方战线，每回合一次。",
+      "kind": "unit",
+      "skill": "manufacture"
+    },
+    "tower": {
+      "id": "tower",
+      "name": "帝国决策塔",
+      "cost": 7,
+      "attack": 0,
+      "health": 8,
+      "tags": [
+        "建筑",
+        "远程"
+      ],
+      "text": "技能·调度：使一个友军立刻进行一次不消耗行动的合法攻击。每回合一次。",
+      "kind": "unit",
+      "skill": "command"
+    }
+  },
+  "default_deck": [
+    "scout",
+    "archer",
+    "light_cavalry",
+    "infantry",
+    "hound",
+    "loan",
+    "arrows",
+    "fireball",
+    "heal",
+    "engineer",
+    "scout",
+    "archer",
+    "light_cavalry",
+    "infantry",
+    "hound",
+    "loan",
+    "arrows",
+    "fireball",
+    "heal",
+    "engineer",
+    "heavy_cavalry",
+    "vanguard",
+    "merchant",
+    "banner",
+    "shield",
+    "artillery",
+    "carrier",
+    "medium_tank",
+    "heavy_tank",
+    "factory"
+  ]
+}
